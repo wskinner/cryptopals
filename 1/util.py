@@ -1,6 +1,53 @@
 from Crypto.Cipher import AES
 from Crypto import Random
 
+def padding_valid(st):
+    try:
+        last = ord(st[-1])
+        if last == 0: return False
+        if last > 16: return False
+        for i in range(len(st) - last, len(st)):
+            assert ord(st[i]) == last
+        return True
+    except:
+        return False
+
+def strip_padding(st):
+    if padding_valid(st):
+        return st[:len(st) - last]
+    raise Exception('Invalid Padding')
+
+# Given something like 'foo=bar&baz=qux&zap=zazzle'
+# return a dictionary like {'foo': 'bar', 'baz': 'qux', 'zap': 'zazzle'}
+def parse_kv(st):
+    pairs = st.strip().split('&')
+    d = {}
+    for p in pairs:
+        kv = p.split('=')
+        d[kv[0]] = kv[1]
+    return d
+
+def encode_kv(d):
+    st = 'email=' + d['email'] + '&uid=' + d['uid'] + '&role=' + d['role']
+    return st
+
+email_to_id = {}
+next_id = 0
+# Profile IDs last the duration of an interpreter session
+def profile_for(email):
+    global next_id
+    email = email.replace('=', '').replace('&', '')
+    if email in email_to_id:
+        return email_to_id[email]
+    else:
+        email_to_id[email] = next_id
+        next_id += 1
+    d = {'email': email, 'uid': str(email_to_id[email]), 'role': 'user'}
+    return encode_kv(d)
+
+def str_to_nums(st):
+    return map(ord, st)
+
 def xor_strings(a, b):
     if len(a) != len(b):
         raise Exception('strings must be the same length')
@@ -47,16 +94,16 @@ def guess_single_xor_key(data):
 
 def pkcs7_pad(data, bs=16):
     padding_needed = bs - len(data) % bs
+    if padding_needed == 0: padding_needed = 16
     return data + chr(padding_needed) * padding_needed
 
 # AES-128 encrypt with cbc mode 
 # Ci = AES(Pi xor Ci-1)
 def cbc_decrypt(data, key, iv, bs=16):
     aes = AES.new(key, AES.MODE_ECB)
-    padded = pkcs7_pad(data)
     plain_blocks = []
     prev_cipher_block = iv
-    for i in range(0, len(data) - bs, bs):
+    for i in range(0, len(data), bs):
         block = data[i:i+bs]
         plain = xor_byte_strings(aes.decrypt(block), prev_cipher_block)
         prev_cipher_block = block
@@ -69,10 +116,18 @@ def ecb_encrypt(data, key, bs=16):
     padded = pkcs7_pad(data)
     return aes.encrypt(padded)
 
+def ecb_decrypt(ciphertext, key, bs=16):
+    aes = AES.new(key, AES.MODE_ECB)
+    return aes.decrypt(ciphertext)
+
 def cbc_encrypt(data, key, iv, bs=16):
     aes = AES.new(key, AES.MODE_CBC, iv)
     padded = pkcs7_pad(data)
     return aes.encrypt(padded)
+
+def cbc_encrypt_nopad(data, key, iv, bs=16):
+    aes = AES.new(key, AES.MODE_CBC, iv)
+    return aes.encrypt(data)
 
 def keygen(bs=16):
     return Random.get_random_bytes(bs)
@@ -89,4 +144,4 @@ def ecb_blocksize(oracle):
     for i in range(1, 64):
         s = 'a' * i * 4
         cypher = oracle(s)
-        if cypher[:i] == cyper[i:i*2] && cypher[i*2:i*3] == cypher[i*3:i*4]: return i
+        if cypher[:i] == cyper[i:i*2] and cypher[i*2:i*3] == cypher[i*3:i*4]: return i
