@@ -1,5 +1,8 @@
 from Crypto.Cipher import AES
+from Crypto.Util.strxor import strxor
 from Crypto import Random
+import random
+import struct
 
 def padding_valid(st):
     try:
@@ -129,7 +132,30 @@ def cbc_encrypt_nopad(data, key, iv, bs=16):
     aes = AES.new(key, AES.MODE_CBC, iv)
     return aes.encrypt(data)
 
-def keygen(bs=16):
+def make_ctr_nonce(i):
+    nonce_bytes = chr(0) * 8
+    if i < (2**32 - 1):
+        nonce_bytes += ''.join(reversed(struct.pack('>Q', i)))
+    else:
+        # TODO
+        raise Exception("that's a big nonce...")
+    return nonce_bytes
+
+def ctr_encrypt(data, key, nonce, bs=16):
+    aes = AES.new(key, AES.MODE_ECB)
+    for i in range(0, len(data), bs):
+        nonce_bytes = make_ctr_nonce(nonce)
+        block = data[i:i+bs]
+        yield xor_byte_strings(aes.encrypt(nonce_bytes), block)
+        nonce += 1
+
+def ctr_decrypt(data, key, nonce, bs=16):
+    return ctr_encrypt(data, key, nonce, bs)
+
+def keygen(bs=16, seed=None):
+    if seed is not None:
+        random.seed(seed)
+        return ''.join([chr(random.choice(range(256))) for i in range(bs)])
     return Random.get_random_bytes(bs)
 
 def is_ecb(f):
@@ -145,3 +171,9 @@ def ecb_blocksize(oracle):
         s = 'a' * i * 4
         cypher = oracle(s)
         if cypher[:i] == cyper[i:i*2] and cypher[i*2:i*3] == cypher[i*3:i*4]: return i
+
+def stringify_stream(gen):
+    return ''.join([x for x in gen])
+
+def get_blocks(data, bs=16):
+    return [data[i:i+bs] for i in range(0, len(data), bs)]

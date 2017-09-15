@@ -14,7 +14,7 @@ data = [
     'MDAwMDA4b2xsaW4nIGluIG15IGZpdmUgcG9pbnQgb2g=',
     'MDAwMDA5aXRoIG15IHJhZy10b3AgZG93biBzbyBteSBoYWlyIGNhbiBibG93'
 ]
-key = keygen()
+key = keygen(0)
 #st = random.choice(data).decode('base64')
 
 def choose_and_encrypt(st):
