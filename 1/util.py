@@ -4,6 +4,17 @@ from Crypto import Random
 import random
 import struct
 
+def padding_length(st):
+    try:
+        last = ord(st[-1])
+        if last == 0: return False
+        if last > 16: return False
+        for i in range(len(st) - last, len(st)):
+            assert ord(st[i]) == last
+        return last
+    except:
+        return -1
+
 def padding_valid(st):
     try:
         last = ord(st[-1])
@@ -16,8 +27,8 @@ def padding_valid(st):
         return False
 
 def strip_padding(st):
-    if padding_valid(st):
-        return st[:len(st) - last]
+    l = padding_length(st)
+    return st[: -l]
     raise Exception('Invalid Padding')
 
 # Given something like 'foo=bar&baz=qux&zap=zazzle'
