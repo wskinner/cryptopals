@@ -188,19 +188,22 @@ class MersenneTwister:
         for i in range(1, 624):
             self.mt[i] = self._int32(1812433253 * (self.mt[i - 1] ^ self.mt[i - 1] >> 30) + i)
 
+    def randint(self):
+        return self.extract_number()
+
     def extract_number(self):
         if self.index >= 624:
             self.twist()
         y = self.mt[self.index]
 
-        y = y ^ y >> 11
-        y = y ^ y << 7 & 2636928640
-        y = y ^ y << 15 & 4022730752
-        y = y ^ y >> 18
+        y1 = y ^ (y >> 11)
+        y2 = y1 ^ ((y1 << 7) & 2636928640)
+        y3 = y2 ^ ((y2 << 15) & 4022730752)
+        y4 = y3 ^ (y3 >> 18)
 
         self.index += 1
 
-        return self._int32(y)
+        return self._int32(y4)
 
     def twist(self):
         for i in range(624):
