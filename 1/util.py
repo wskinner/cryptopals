@@ -218,5 +218,3 @@ class MersenneTwister:
 
     def _int32(self, x):
         return int(0xFFFFFFFF & x)
-
-
