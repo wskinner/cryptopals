@@ -31,7 +31,7 @@ def insecure_compare(a, b):
         if i >= len(b) or a[i] != b[i]: 
             print 'end compare', current_millis() - start_time, a[len(b) -1].encode('hex'), b[-1].encode('hex')
             return False
-        time.sleep(.05)
+        time.sleep(.005)
 
     print 'end compare (returning true)', current_millis() - start_time
     return True

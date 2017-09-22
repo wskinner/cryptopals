@@ -6,6 +6,10 @@ import time
 # and choosing the one where the server took the longest to respond, then all the
 # second bytes, and so on.
 
+# This could be sped up by around 50% by short circuiting out of the loop 
+# as soon as we observe an abnormally high value. But this is risky. It 
+# already seems like there is quite a bit of variance in practice.
+
 def current_millis():
     return int(round(time.time() * 1000))
 
@@ -13,7 +17,7 @@ if __name__ == '__main__':
     file = 'Ice Ice Baby'
     url = 'http://localhost:8080/test'
     status_code = 500
-    known_prefix = ''
+    known_prefix = '829cd4c6269bbf85e91e5473c097b1'.decode('hex')
     while True:
         print 'so far', known_prefix.encode('hex')
         max_time = -1
