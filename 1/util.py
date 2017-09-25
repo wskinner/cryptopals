@@ -59,6 +59,19 @@ def profile_for(email):
     d = {'email': email, 'uid': str(email_to_id[email]), 'role': 'user'}
     return encode_kv(d)
 
+# Encode a string as a number
+def str_to_num(st):
+    return int(st.encode('hex'), 16)
+
+# Decode the string that was encoded with encode_hex
+def num_to_str(num):
+    hexst = hex(num).replace('L', '')
+    chars = []
+    for i in xrange(2, len(hexst), 2):
+        c = chr(int(hexst[i:i+2], 16))
+        chars.append(c)
+    return ''.join(chars)
+
 def str_to_nums(st):
     return map(ord, st)
 
@@ -242,5 +255,3 @@ def modexp(x, e, m):
             Y = (X * Y) % m
             E = E - 1
     return Y
-
-
