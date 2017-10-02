@@ -33,8 +33,9 @@ def gcd(a, m):
 
 def invmod(a, m):
     gcd, coefficients = egcd(a, m)
-    result =coefficients[0] % m
-    print 'invmod', a, m, result
+    if gcd != 1:
+        raise Exception('multiplicative inverse does not exist for a=%d, m=%d' % (a, m))
+    result = coefficients[0] % m
     return result
 
 def test_egcd():
@@ -85,7 +86,7 @@ class RSA:
         e = 3
         
         d = invmod(e, et)
-        r = RSA(e, n, d)
+        r = RSA(e=e, n=n, d=d)
         r.p = p
         r.q = q
         r.e = e

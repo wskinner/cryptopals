@@ -9,11 +9,12 @@ from rsa import *
 # has a unique solution for x modulo M, where M = m1 * m2 * m3.
 #
 # In this excercise, we are given trying to solve for a1, a2, a3. 
-#   x1 = m**3 mod m1
-#   x2 = m**3 mod m2
-#   x3 = m**3 mod m3
-# The CRT shows how to compute
-#   x = m**3 mod M
+#   a1 = m**3 mod n1
+#   a2 = m**3 mod n2
+#   a3 = m**3 mod n3
+# Where the a's are the ciphertexts, computed by modular exponenetiation of the
+# message modulo each public key (the n's). Since we know the n's and the a's,
+# we can find x according to the CRT.
 
 def cube_root(x):
     '''
@@ -43,6 +44,7 @@ def cube_root(x):
         mid = (mx + mn) // 2
 
 def test_cuberoot():
+    print 'Testing cube root'
     x = 3
     cubed = 27
     assert cube_root(cubed) == x
@@ -72,8 +74,8 @@ def crack_rsa_broadcast(c0, c1, c2,
     sum2 = (c1 * ms1 * invmod(ms1, n1))
     sum3 = (c2 * ms2 * invmod(ms2, n2))
     result = sum1 + sum2 + sum3
+    result = result % M
 
-    print 'result', result
     rsa = RSA()
     return rsa.decode(cube_root(result))
 
@@ -81,11 +83,8 @@ def test_long():
     msg = 'Cooking MCs like a pound of bacon'
 
     key0 = RSA.new(1024)
-    print key0
     key1 = RSA.new(1024)
-    print key1
     key2 = RSA.new(1024)
-    print key2
 
     c0, c1, c2 = [k.encrypt(msg) for k in (key0, key1, key2)]
     n0, n1, n2 = [k.pubkey[1] for k in (key0, key1, key2)]
@@ -102,11 +101,8 @@ def test_short():
     msg = 'A'
 
     key0 = RSA.new(p=23, q=29)
-    print key0
-    key1 = RSA.new(p=31, q=37)
-    print key1
-    key2 = RSA.new(p=41, q=43)
-    print key2
+    key1 = RSA.new(p=47, q=41)
+    key2 = RSA.new(p=53, q=59)
 
     c0, c1, c2 = [k.encrypt(msg) for k in (key0, key1, key2)]
     n0, n1, n2 = [k.pubkey[1] for k in (key0, key1, key2)]
@@ -120,6 +116,6 @@ def test_short():
     print 'The message is', result
 
 if __name__ == '__main__':
-    print 'Testing cube root'
     test_cuberoot()
     test_short()
+    test_long()
