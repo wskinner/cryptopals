@@ -28,10 +28,14 @@ def egcd(a, m):
     gcd = old_r
     return gcd, coefficients
 
+def gcd(a, m):
+    return egcd(a, m)[0]
+
 def invmod(a, m):
     gcd, coefficients = egcd(a, m)
-    assert gcd == 1
-    return coefficients[0] % m
+    result =coefficients[0] % m
+    print 'invmod', a, m, result
+    return result
 
 def test_egcd():
     print 'Testing egcd'
@@ -70,16 +74,23 @@ class RSA:
 
     # Generate a new RSA keypair
     @staticmethod
-    def new(n_bits=2048):
-        p = generate_prime(n_bits)
-        q = generate_prime(n_bits)
+    def new(n_bits=2048, p=None, q=None):
+        if p is None and q is None:
+            p = generate_prime(n_bits)
+            q = generate_prime(n_bits)
+            
         n = p * q
         et = (p - 1) * (q - 1)
 
         e = 3
         
         d = invmod(e, et)
-        return RSA(e, n, d)
+        r = RSA(e, n, d)
+        r.p = p
+        r.q = q
+        r.e = e
+        r.d = d
+        return r
 
     def _encrypt_num(self, num):
         c = modexp(num, self.pubkey[0], self.pubkey[1])
@@ -101,6 +112,9 @@ class RSA:
         
     def decode(self, num):
         return num_to_str(num)
+
+    def __str__(self):
+        return 'RSA Keypair: p=%d, q=%d, e=%d, d=%d' % (self.p, self.q, self.e, self.d)
 
 if __name__ == '__main__':
     test_egcd()

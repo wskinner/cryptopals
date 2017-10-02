@@ -1,0 +1,125 @@
+from rsa import *
+
+# RSA Broadcast attack
+# The Chinese Remainder Theorem says that if we have e.g. m1, m2, m3
+# pairwise coprime, then the system of equations
+#   x = a1 mod m1
+#   x = a2 mod m2
+#   x = a3 mod m3
+# has a unique solution for x modulo M, where M = m1 * m2 * m3.
+#
+# In this excercise, we are given trying to solve for a1, a2, a3. 
+#   x1 = m**3 mod m1
+#   x2 = m**3 mod m2
+#   x3 = m**3 mod m3
+# The CRT shows how to compute
+#   x = m**3 mod M
+
+def cube_root(x):
+    '''
+    Uses binary search to find the cube root of a large integer. 
+    Assumes the root actually exists.
+    '''
+    mn = 0
+    mx = x
+    mid = x / 2
+    while True:
+        cube = mid**3
+        #print 'diff, mn, mid, mx', x - cube, mn, mid, mx
+        if cube > x:
+            # need to reduce base
+            if mx - mn == 1:
+                mid = mx
+            else:
+                mx = mid
+        elif cube < x:
+            if mx - mn == 1:
+                mid = mx
+            else:
+                mn = mid
+        else:
+            return mid
+
+        mid = (mx + mn) // 2
+
+def test_cuberoot():
+    x = 3
+    cubed = 27
+    assert cube_root(cubed) == x
+
+    x = 12345678987654323456789098
+    cubed = x**3
+    assert cube_root(cubed) == x
+
+def crack_rsa_broadcast(c0, c1, c2,
+                        n0, n1, n2):
+
+    assert n0 != n1
+    assert n1 != n2
+    M = n0 * n1 * n2
+    ms0 = M // n0
+    assert ms0 * n0 == M
+    ms1 = M // n1
+    assert ms1 * n1 == M
+    ms2 = M // n2
+    assert ms2 * n2 == M
+
+    assert gcd(n0, n1) == 1
+    assert gcd(n1, n2) == 1
+    assert gcd(n2, n0) == 1
+
+    sum1 = (c0 * ms0 * invmod(ms0, n0))
+    sum2 = (c1 * ms1 * invmod(ms1, n1))
+    sum3 = (c2 * ms2 * invmod(ms2, n2))
+    result = sum1 + sum2 + sum3
+
+    print 'result', result
+    rsa = RSA()
+    return rsa.decode(cube_root(result))
+
+def test_long():
+    msg = 'Cooking MCs like a pound of bacon'
+
+    key0 = RSA.new(1024)
+    print key0
+    key1 = RSA.new(1024)
+    print key1
+    key2 = RSA.new(1024)
+    print key2
+
+    c0, c1, c2 = [k.encrypt(msg) for k in (key0, key1, key2)]
+    n0, n1, n2 = [k.pubkey[1] for k in (key0, key1, key2)]
+
+    assert key0.decrypt(c0) == msg
+    assert key1.decrypt(c1) == msg
+    assert key2.decrypt(c2) == msg
+
+    print 'Cracking broadcast RSA'
+    result = crack_rsa_broadcast(c0, c1, c2, n0, n1, n2)
+    print 'The message is', result
+
+def test_short():
+    msg = 'A'
+
+    key0 = RSA.new(p=23, q=29)
+    print key0
+    key1 = RSA.new(p=31, q=37)
+    print key1
+    key2 = RSA.new(p=41, q=43)
+    print key2
+
+    c0, c1, c2 = [k.encrypt(msg) for k in (key0, key1, key2)]
+    n0, n1, n2 = [k.pubkey[1] for k in (key0, key1, key2)]
+
+    assert key0.decrypt(c0) == msg
+    assert key1.decrypt(c1) == msg
+    assert key2.decrypt(c2) == msg
+
+    print 'Cracking broadcast RSA'
+    result = crack_rsa_broadcast(c0, c1, c2, n0, n1, n2)
+    print 'The message is', result
+
+if __name__ == '__main__':
+    print 'Testing cube root'
+    test_cuberoot()
+    test_short()
