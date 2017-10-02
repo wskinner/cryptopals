@@ -1,4 +1,5 @@
 from rsa import *
+from util import invmod
 
 # RSA Broadcast attack
 # The Chinese Remainder Theorem says that if we have e.g. m1, m2, m3

@@ -1,42 +1,9 @@
 import subprocess
-from util import modexp, num_to_str, str_to_num
+from util import modexp, num_to_str, str_to_num, invmod
 
 def generate_prime(min_bits=4096):
     bits = str(int(min_bits))
     return int(subprocess.check_output(['/usr/local/opt/openssl@1.0/bin/openssl', 'prime', '-generate', '-bits', bits, '-hex']).strip(), 16)
-
-# If a has a multiplicative inverse mod m, gcd(a, m) == 1
-def egcd(a, m):
-    s, old_s = (0, 1)
-    t, old_t = (1, 0)
-    r, old_r = (m, a)
-
-    while r != 0:
-        # is the integer division of old_r and r
-        quotient = old_r / r
-
-        # r is the integer remainder of old_r / r
-        old_r, r = (r, old_r - quotient * r)
-
-        # s is the integer remainder of old_s / s
-        old_s, s = (s, old_s - quotient * s)
-
-        # t is the integer remainder of old_t / t
-        old_t, t = (t, old_t - quotient * t)
-
-    coefficients = (old_s, old_t)
-    gcd = old_r
-    return gcd, coefficients
-
-def gcd(a, m):
-    return egcd(a, m)[0]
-
-def invmod(a, m):
-    gcd, coefficients = egcd(a, m)
-    if gcd != 1:
-        raise Exception('multiplicative inverse does not exist for a=%d, m=%d' % (a, m))
-    result = coefficients[0] % m
-    return result
 
 def test_egcd():
     print 'Testing egcd'
