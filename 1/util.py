@@ -61,7 +61,8 @@ def profile_for(email):
 
 # Encode a string as a number
 def str_to_num(st):
-    return int(st.encode('hex'), 16)
+    padded = st.encode('hex')
+    return int(padded, 16)
 
 # Decode the string that was encoded with encode_hex
 def num_to_str(num):
@@ -293,3 +294,42 @@ def invmod(a, m):
 def modinv(x, d, m):
     inv = invmod(x, m)
     return (d * inv) % m
+
+def cube_root(x, closest=False):
+    '''
+    Uses binary search to find the cube root of a large integer. 
+    Assumes the root actually exists.
+    '''
+    mn = 0
+    mx = x
+    mid = x / 2
+    while True:
+        cube = mid**3
+        #print 'diff, mn, mid, mx', x - cube, mn, mid, mx
+        if cube > x:
+            # need to reduce base
+            if mx - mn == 1:
+                if mn**3 == x:
+                    return mn
+                else:
+                    if closest:
+                        return mid
+                    raise Exception('Number is not a perfect cube')
+            else:
+                mx = mid
+        elif cube < x:
+            if mx - mn == 1:
+                if mx**3 == x: 
+                    return mx
+                else:
+                    if closest:
+                        return mid
+                    raise Exception('Number is not a perfect cube')
+                mid = mx
+            else:
+                mn = mid
+        else:
+            return mid
+
+        mid = (mx + mn) // 2
+

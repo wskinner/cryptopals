@@ -36,9 +36,10 @@ def test_encrypt_decrypt():
 
 
 class RSA:
-    def __init__(self, e=None, n=None, d=None):
+    def __init__(self, e=None, n=None, d=None, n_bits=None):
         self.pubkey = (e, n)
         self.privkey = (d, n)
+        self.n_bits = n_bits
 
     # Generate a new RSA keypair
     @staticmethod
@@ -53,7 +54,7 @@ class RSA:
         e = 3
         
         d = invmod(e, et)
-        r = RSA(e=e, n=n, d=d)
+        r = RSA(e=e, n=n, d=d, n_bits=n_bits)
         r.p = p
         r.q = q
         r.e = e
@@ -80,6 +81,12 @@ class RSA:
         
     def decode(self, num):
         return num_to_str(num)
+
+    def reverse_encrypt(self, msg):
+        return self._decrypt_num(self.encode(msg))
+
+    def reverse_decrypt(self, ciphertext_num):
+        return self.decode(self._encrypt_num(ciphertext_num))
 
     def __str__(self):
         return 'RSA Keypair: p=%d, q=%d, e=%d, d=%d' % (self.p, self.q, self.e, self.d)

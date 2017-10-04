@@ -1,5 +1,5 @@
 from rsa import *
-from util import invmod
+from util import *
 
 # RSA Broadcast attack
 # The Chinese Remainder Theorem says that if we have e.g. m1, m2, m3
@@ -16,34 +16,6 @@ from util import invmod
 # Where the a's are the ciphertexts, computed by modular exponenetiation of the
 # message modulo each public key (the n's). Since we know the n's and the a's,
 # we can find x according to the CRT.
-
-def cube_root(x):
-    '''
-    Uses binary search to find the cube root of a large integer. 
-    Assumes the root actually exists.
-    '''
-    mn = 0
-    mx = x
-    mid = x / 2
-    while True:
-        cube = mid**3
-        #print 'diff, mn, mid, mx', x - cube, mn, mid, mx
-        if cube > x:
-            # need to reduce base
-            if mx - mn == 1:
-                mid = mx
-            else:
-                mx = mid
-        elif cube < x:
-            if mx - mn == 1:
-                mid = mx
-            else:
-                mn = mid
-        else:
-            return mid
-
-        mid = (mx + mn) // 2
-
 def test_cuberoot():
     print 'Testing cube root'
     x = 3
