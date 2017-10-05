@@ -158,6 +158,33 @@ class DSA(object):
         v = ((v1 * v2) % self.params.p) % self.params.q
         return v == r
 
+
+class CrackDSA(DSA):
+    def __init__(self, y, z, q):
+        params = DSAParams.new()
+        params.y = y
+        super(CrackDSA, self).__init__(params, sha1)
+
+        self.z = z
+        self.q = q
+
+    @staticmethod
+    def solve_x(s=None, k=None, z=None, r=None, q=None):
+        return ((s * k - z) * invmod(r, q)) % q
+
+    def leftmost(self, msg):
+        return self.z
+
+    def sign(self, msg, k, k_inv, x):
+        self.params.x = x
+        return super(CrackDSA, self).sign(msg, k, k_inv)
+
+    def recover_key_from_nonce(self, msg, k, sig):
+        candidate = CrackDSA.solve_x(s=sig[1], k=k, z=self.z, r=sig[0], q=self.q)
+        return candidate
+
+
+
 def test_num_to_str():
     print 'Testing num to str conversion'
     x = 'hello world'

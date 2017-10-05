@@ -1,29 +1,6 @@
 from dsa import *
 from hashlib import sha1
 
-def solve_x(s=None, k=None, z=None, r=None, q=None):
-    return ((s * k - z) * invmod(r, q)) % q
-
-class CrackDSA(DSA):
-    def __init__(self, y, z, q):
-        params = DSAParams.new()
-        params.y = y
-        super(CrackDSA, self).__init__(params, sha1)
-
-        self.z = z
-        self.q = q
-
-    def leftmost(self, msg):
-        return self.z
-
-    def sign(self, msg, k, k_inv, x):
-        self.params.x = x
-        return super(CrackDSA, self).sign(msg, k, k_inv)
-
-    def recover_key_from_nonce(self, msg, k, sig):
-        candidate = solve_x(s=sig[1], k=k, z=self.z, r=sig[0], q=self.q)
-        return candidate
-
 def test_recover_key():
     print 'Testing key recovery'
     dsa = DSA(digest=sha1)
