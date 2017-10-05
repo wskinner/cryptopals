@@ -97,20 +97,18 @@ class DSA:
     def sign(self, msg):
         r, s = (0, 0)
         while r == 0 or s == 0:
-            digester = self.digest()
             k, k_inv = self.gen_k()
-            r = modexp(self.params.g, k, self.params.q)
-            zlen = self.zlen()
+            assert (k * k_inv) % self.params.q == 1
 
+            r = modexp(self.params.g, k, self.params.p) % self.params.q
+
+            digester = self.digest()
             digester.update(msg)
             hsh = digester.digest()
-            print 'hsh', hsh.encode('hex')
 
-            z = self.leftmost(hsh, zlen)
-            print 'z', z
+            z = self.leftmost(hsh, self.zlen())
             s = (k_inv * (z + self.params.x * r)) % self.params.q
         
-        print r, s
         return (r, s)
 
     def validate(self, sig, msg):
@@ -126,19 +124,19 @@ class DSA:
         digester = self.digest()
         digester.update(msg)
         hsh = digester.digest()
-        print 'hsh', hsh.encode('hex')
+        z = self.leftmost(hsh, self.zlen())
 
         w = invmod(s, self.params.q)
-        z = self.leftmost(hsh, self.zlen())
-        print 'z', z
         u1 = (z * w) % self.params.q
         u2 = (r * w) % self.params.q
-        v = ((modexp(self.params.g, u1, self.params.p) *
-                modexp(self.params.y, u2, self.params.p)) % self.params.p) % self.params.q
-        print 'v', v
+
+        v1 = modexp(self.params.g, u1, self.params.p)
+        v2 = modexp(self.params.y, u2, self.params.p)
+        v = ((v1 * v2) % self.params.p) % self.params.q
         return v == r
 
 def test_num_to_str():
+    print 'Testing num to str conversion'
     x = 'hello world'
     assert num_to_str(str_to_num(x), len(x) * 8) == x
 
@@ -152,6 +150,7 @@ def test_num_to_str():
     assert num_to_str(str_to_num(x), len(x) * 8) == x
 
 def test_signature():
+    print 'Testing signature validation'
     msg = "Burning them they ain't quick and nimble"
     signer = DSA.new()
     sig = signer.sign(msg)
