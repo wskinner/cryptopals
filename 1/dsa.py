@@ -51,13 +51,13 @@ class DSAParams(object):
         self.p, self.q, self.g, self.x, self.y = (p, q, g, x, y)
 
     @staticmethod
-    def new():
+    def new(g=G):
         '''
         Generate a new set DSA keypair using the default parameters for p, q, g.
         '''
-        x, y = DSAParams.keygen(P, Q, G)
+        x, y = DSAParams.keygen(P, Q, g)
 
-        return DSAParams(p=P, q=Q, g=G, x=x, y=y)
+        return DSAParams(p=P, q=Q, g=g, x=x, y=y)
     
     @staticmethod
     def keygen(p, q, g):
@@ -135,7 +135,6 @@ class DSA(object):
         '''
         sig a tuple of (r, s)
         '''
-        print self.params
         r, s = sig
         if r <= 0 or r >= self.params.q:
             print 'r out of bounds'

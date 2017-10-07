@@ -72,7 +72,6 @@ class RSA:
     def _decrypt_num(self, num):
         return modexp(num, self.privkey[0], self.privkey[1])
 
-    # Ciphertext is a string (e.g. ascii armored)
     def decrypt(self, ciphertext_num):
         return self.decode(self._decrypt_num(ciphertext_num))
 
