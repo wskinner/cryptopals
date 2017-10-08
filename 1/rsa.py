@@ -45,8 +45,8 @@ class RSA:
     @staticmethod
     def new(n_bits=2048, p=None, q=None):
         if p is None and q is None:
-            p = generate_prime(n_bits)
-            q = generate_prime(n_bits)
+            p = generate_prime(n_bits // 2)
+            q = generate_prime(n_bits // 2)
             
         n = p * q
         et = (p - 1) * (q - 1)
@@ -79,7 +79,7 @@ class RSA:
         return str_to_num(st)
         
     def decode(self, num):
-        return num_to_str(num)
+        return num_to_str(num, self.pubkey[1].bit_length())
 
     def reverse_encrypt(self, msg):
         return self._decrypt_num(self.encode(msg))

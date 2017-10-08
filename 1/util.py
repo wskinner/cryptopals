@@ -3,6 +3,7 @@ from Crypto.Util.strxor import strxor
 from Crypto import Random
 import random
 import struct
+import bitarray
 
 def padding_length(st):
     try:
@@ -60,17 +61,44 @@ def profile_for(email):
     return encode_kv(d)
 
 # Encode a string as a number
-def str_to_num(st):
+def naive_str_to_num(st):
     padded = st.encode('hex')
     return int(padded, 16)
 
 # Decode the string that was encoded with encode_hex
-def num_to_str(num):
+def naive_num_to_str(num):
     hexst = hex(num).replace('L', '')
     chars = []
     for i in xrange(2, len(hexst), 2):
         c = chr(int(hexst[i:i+2], 16))
         chars.append(c)
+    return ''.join(chars)
+
+# This and the below function are as specified by the DSA spec.
+def str_to_num(st):
+    ba = bitarray.bitarray()
+    ba.frombytes(st)
+    total = 0
+    n = len(st) * 8 - 1
+    for b in ba:
+        if b: total += 2**n
+        n -= 1
+    
+    return total
+
+def num_to_str(num, n_bits):
+    if num == 0: 
+        return ''
+    n_bits = max(n_bits, 8)
+    mask = 0xff << n_bits - 8
+    chars = []
+    shift_bits = n_bits - 8
+    while mask >= 0xff:
+        b = (num & mask) >> shift_bits
+        chars.append(chr(b))
+        mask = mask >> 8
+        shift_bits -= 8
+
     return ''.join(chars)
 
 def str_to_nums(st):
