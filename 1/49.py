@@ -1,11 +1,5 @@
 from util import *
 
-def cbc_mac(msg, key, iv, bs=16):
-    # If they're using CBC-MAC, surely they are not padding their messages :)
-    # This makes part 2 a little simpler
-    ct = cbc_encrypt_nopad(msg, key, iv, bs)
-    return ct[-bs:]
-
 class API(object):
     
     def __init__(self, key, bs=16):
