@@ -1,5 +1,5 @@
 from util import *
-from p52 import IteratedHash
+from p52 import AESHash
 from sys import argv
 
 def find_collision(h, k, blocksize):
@@ -49,13 +49,13 @@ def attack(h, blocksize, m):
 def test_find_k_collisions():
     k = 3
     bs = 2
-    h = lambda: IteratedHash(ecb_encrypt)
+    h = AESHash
 
     collisions = find_k_collisions(h, k, bs)
     print collisions
 
 if __name__ == '__main__':
     msg = argv[1]
-    h = lambda: IteratedHash(ecb_encrypt)
+    h = AESHash
     blocksize = 2
     attack(h, blocksize, msg)

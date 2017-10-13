@@ -3,35 +3,57 @@ from itertools import combinations
 
 class IteratedHash(object):
 
-    def __init__(self, c, h='\xff\xff'):
+    def __init__(self, c, h):
         '''
-        h is just 2 bytes of state. c is a function that takes 16 bytes to 16 random
-        bytes, e.g. AES. c(msg, key) -> 16 bytes
+        h is just 2 bytes of state. 
+        c is a function that takes 1 byte and len(h) state bytes to len(h) random bytes.
         '''
         self.h = h
         self.c = c
-        self.msg_bytes = []
 
     def update(self, m):
         for b in m:
-            self.msg_bytes.append(b)
-            if len(self.msg_bytes) == 16:
-                self.h = self.c(''.join(self.msg_bytes), pkcs7_pad(self.h))[:len(self.h)]
-                self.msg_bytes = []
+            self.h = self.c(b, self.h)
         return self
     
     def digest(self):
-        if len(self.msg_bytes) != 16:
-            st = pkcs7_pad(''.join(self.msg_bytes))
-            return self.c(st, pkcs7_pad(self.h))[:len(self.h)]
+        return self.h
     
     def clone(self):
         new = IteratedHash(self.c, self.h)
-        new.msg_bytes = list(self.msg_bytes)
         return new
-
+    
     def state(self):
-        return self.h, tuple(self.msg_bytes)
+        return self.h
+
+
+class AESCompressor(object):
+    
+    def __init__(self, blocksize, rounds):
+        assert 0 <= blocksize <= 16
+        self.bs = blocksize
+        self.rounds = rounds
+
+    def __call__(self, c, k):
+        assert self.rounds > 0
+        assert len(k) == self.bs
+        assert len(c) == 1
+        
+        rounds = self.rounds
+        result = None
+        while rounds > 0:
+            k_pad = k + (16 - len(k)) * '\x00'
+            c_pad = c + 15 * '\x00'
+            result = ecb_encrypt(c_pad, k_pad)[:self.bs]
+            k = result
+            rounds -= 1
+        return result
+
+class AESHash(IteratedHash):
+
+    def __init__(self, h='\xff\xff', rounds=1):
+        super(AESHash, self).__init__(AESCompressor(len(h), rounds), h)
+
 
 def generate_collisions(hash_factory, n):
     '''
@@ -39,7 +61,7 @@ def generate_collisions(hash_factory, n):
     '''
     collisions = []
     hash_to_inputs = {}
-    i = 0
+    i = 1
     while len(collisions) < 2**n:
         hasher = hash_factory()
         if i < 2**8:
@@ -61,21 +83,18 @@ def generate_collisions(hash_factory, n):
             hash_to_inputs[hsh] = set([st])
         i += 1
 
-def double_ecb_encrypt(msg, key):
-    k2 = ecb_encrypt(msg, key)
-    return ecb_encrypt(k2, key)
 
 if __name__ == '__main__':
-    f = lambda : IteratedHash(ecb_encrypt)
-    g = lambda : IteratedHash(double_ecb_encrypt, h='\xff\xff')
+    state = '\xff'
+    f = lambda : AESHash(h=state)
+    g = lambda : AESHash(h=state, rounds=2)
     
     n = 16
     f_collisions = generate_collisions(f, n)
-    i = 0
     for c in f_collisions:
         g1 = g().update(c[0]).digest()
         g2 = g().update(c[1]).digest()
+        print g1.encode('hex'), g2.encode('hex')
         if g1 == g2:
-            print 'Found collision in g after', i, 'iterations!', c, '->', g1
+            print 'Found collision in g!', c, '->', g1.encode('hex')
             break
-        i += 1
