@@ -6,6 +6,7 @@ def find_collision(h, k, blocksize):
     '''
     Find a collision between a single block message and a message of 2^(k-1) blocks
     '''
+    print 'find_collision(k, %d, %d)' % (k, blocksize)
     if blocksize == 1:
         start = 0
     else:
@@ -55,6 +56,7 @@ def test_find_k_collisions():
     print collisions
 
 if __name__ == '__main__':
+    test_find_k_collisions()
     msg = argv[1]
     h = AESHash
     blocksize = 2
