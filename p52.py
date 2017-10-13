@@ -24,7 +24,14 @@ class IteratedHash(object):
         if len(self.msg_bytes) != 16:
             st = pkcs7_pad(''.join(self.msg_bytes))
             return self.c(st, pkcs7_pad(self.h))[:len(self.h)]
+    
+    def clone(self):
+        new = IteratedHash(self.c, self.h)
+        new.msg_bytes = list(self.msg_bytes)
+        return new
 
+    def state(self):
+        return self.h, tuple(self.msg_bytes)
 
 def generate_collisions(hash_factory, n):
     '''
