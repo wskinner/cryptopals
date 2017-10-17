@@ -4,12 +4,13 @@ from hashlib import sha256
 import json
 
 # Default parameters
-P = 0x800000000000000089e1855218a0e7dac38136ffafa72eda7859f2171e25e65eac698c1702578b07dc2a1076da241c76c62d374d8389ea5aeffd3226a0530cc565f3bf6b50929139ebeac04f48c3c84afb796d61e5a4f9a8fda812ab59494232c7d2b4deb50aa18ee9e132bfa85ac4374d7f9091abc3d015efc871a584471bb1
-Q = 0xf4f47f05794b256174bba6e9b396a7707e563c5b
-G = 0x5958c9d3898b224b12672c0b98e06c60df923cb8bc999d119458fef538b8fa4046c8db53039db620c094c9fa077ef389b5322a559946a71903f990f1f7e0e025e2d7f7cf494aff1a0470f5b64c36b625a097f1651fe775323556fe00b3608c887892878480e99041be601a62166ca6894bdd41a7054ec89f756ba9fc95302291
 
 class DSAParams(object):
     
+    P = 0x800000000000000089e1855218a0e7dac38136ffafa72eda7859f2171e25e65eac698c1702578b07dc2a1076da241c76c62d374d8389ea5aeffd3226a0530cc565f3bf6b50929139ebeac04f48c3c84afb796d61e5a4f9a8fda812ab59494232c7d2b4deb50aa18ee9e132bfa85ac4374d7f9091abc3d015efc871a584471bb1
+    Q = 0xf4f47f05794b256174bba6e9b396a7707e563c5b
+    G = 0x5958c9d3898b224b12672c0b98e06c60df923cb8bc999d119458fef538b8fa4046c8db53039db620c094c9fa077ef389b5322a559946a71903f990f1f7e0e025e2d7f7cf494aff1a0470f5b64c36b625a097f1651fe775323556fe00b3608c887892878480e99041be601a62166ca6894bdd41a7054ec89f756ba9fc95302291
+
     def __init__(self, 
             p=None,
             q=None,
@@ -22,17 +23,19 @@ class DSAParams(object):
         '''
         self.p, self.q, self.g, self.x, self.y = (p, q, g, x, y)
 
-    @staticmethod
-    def new(g=G):
+    @classmethod
+    def new(cls, g=None):
         '''
         Generate a new set DSA keypair using the default parameters for p, q, g.
         '''
-        x, y = DSAParams.keygen(P, Q, g)
+        if g is None:
+            g = cls.G
+        x, y = DSAParams.keygen(cls.P, cls.Q, g)
 
-        return DSAParams(p=P, q=Q, g=g, x=x, y=y)
+        return DSAParams(p=cls.P, q=cls.Q, g=g, x=x, y=y)
     
-    @staticmethod
-    def keygen(p, q, g):
+    @classmethod
+    def keygen(cls, p, q, g):
         N = q.bit_length()
         L = p.bit_length()
 
@@ -63,8 +66,8 @@ class DSA(object):
         self.digest = digest
         self.rand = SystemRandom()
 
-    @staticmethod
-    def new():
+    @classmethod
+    def new(cls):
         params = DSAParams.new()
         return DSA(params)
 
@@ -139,8 +142,8 @@ class CrackDSA(DSA):
         self.z = z
         self.q = q
 
-    @staticmethod
-    def solve_x(s=None, k=None, z=None, r=None, q=None):
+    @classmethod
+    def solve_x(cls, s=None, k=None, z=None, r=None, q=None):
         return ((s * k - z) * invmod(r, q)) % q
 
     def leftmost(self, msg):
@@ -153,7 +156,6 @@ class CrackDSA(DSA):
     def recover_key_from_nonce(self, msg, k, sig):
         candidate = CrackDSA.solve_x(s=sig[1], k=k, z=self.z, r=sig[0], q=self.q)
         return candidate
-
 
 
 def test_num_to_str():
@@ -170,6 +172,7 @@ def test_num_to_str():
     x = ''
     assert num_to_str(str_to_num(x), len(x) * 8) == x
 
+
 def test_signature():
     print 'Testing signature validation'
     msg = "Burning them they ain't quick and nimble"
@@ -181,6 +184,7 @@ def test_signature():
     assert not signer.validate(sig1, msg)
 
     assert not signer.validate(sig, msg + ' I go crazy when I hear a cymbal')
+
 
 if __name__ == '__main__':
     test_num_to_str()
