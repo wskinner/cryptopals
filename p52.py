@@ -3,17 +3,18 @@ from itertools import combinations
 
 class IteratedHash(object):
 
-    def __init__(self, c, h):
+    def __init__(self, c, h, bs=2):
         '''
         h is just 2 bytes of state. 
         c is a function that takes 1 byte and len(h) state bytes to len(h) random bytes.
         '''
         self.h = h
         self.c = c
+        self.bs = bs
 
     def update(self, m):
-        for b in m:
-            self.h = self.c(b, self.h)
+        for i in xrange(0, len(m), self.bs):
+            self.h = self.c(m[i:i+self.bs], self.h)
         return self
     
     def digest(self):
@@ -37,13 +38,12 @@ class AESCompressor(object):
     def __call__(self, c, k):
         assert self.rounds > 0
         assert len(k) == self.bs
-        assert len(c) == 1
         
         rounds = self.rounds
         result = None
         while rounds > 0:
             k_pad = k + (16 - len(k)) * '\x00'
-            c_pad = c + 15 * '\x00'
+            c_pad = c + (16 - len(c)) * '\x00'
             result = ecb_encrypt(c_pad, k_pad)[:self.bs]
             k = result
             rounds -= 1
