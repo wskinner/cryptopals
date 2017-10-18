@@ -366,3 +366,27 @@ def cbc_mac(msg, key, iv, bs=16):
     # This makes part 2 a little simpler
     ct = cbc_encrypt_nopad(msg, key, iv, bs)
     return ct[-bs:]
+
+def generate_strings(byte_length, offset=0):
+    '''
+    Lazily enumerate all the strings of exactly byte_length bytes
+    '''
+    start = 2**((byte_length - 1) * 8) + offset
+    end = 2**(byte_length * 8)
+    assert start < end
+    for num in xrange(start, end):
+        yield num_to_str(num, byte_length * 8)
+
+def single_block_collision(hash_factory, initial_state1, initial_state2, blocksize):
+    for i, s1 in enumerate(generate_strings(blocksize)):
+        for s2 in generate_strings(blocksize, i):
+            h1 = hash_factory(h=initial_state1).update(s1).digest()
+            h2 = hash_factory(h=initial_state2).update(s2).digest()
+            if h2 == h1:
+                return {
+                        's1': s1, 
+                        's2': s2,
+                        'initial_state1': initial_state1,
+                        'initial_state2': initial_state2,
+                        'final_state': h1
+                        }

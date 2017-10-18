@@ -1,5 +1,5 @@
 from p52 import AESHash
-from util import num_to_str
+from util import single_block_collision
 from sys import argv
 import math
 import pickle
@@ -18,31 +18,18 @@ class ExpandableMessage(object):
         print 'find_collision(%s, %d)' % (initial_state.encode('hex'), k)
         # The block size in bytes
         blocksize = self.hash_factory().bs
-        start = 2**((blocksize - 1) * 8)
-        end = 2**(blocksize * 8)
-        dummy_bytes = (blocksize * 2**(k-1)) * '\x00'
         dummy_hash = self.hash_factory(h=initial_state)
+        dummy_bytes = (blocksize * 2**(k-1)) * '\x00'
         dummy_hash.update(dummy_bytes)
 
-        print 'Finding collisions between %d and %d' % (start, end)
-        for single_block1 in xrange(start, end):
-            for single_block2 in xrange(single_block1, end):
-                s1 = num_to_str(single_block1, 8 * blocksize)
-                s2 = num_to_str(single_block2, 8 * blocksize)
-                #print 's1, s2:', s1.encode('hex'), s2.encode('hex')
-                h1 = self.hash_factory(h=initial_state).update(s1).digest()
-                h2 = dummy_hash.clone().update(s2).digest()
-                if h2 == h1:
-                    print 'Found collision from initial state = "%s"' % initial_state.encode('hex'), s1.encode('hex'), s2.encode('hex'), '->', h1.encode('hex')
-                    collision = {
-                        'initial_state': initial_state,
-                        's1': s1,
-                        's2': s2,
-                        'dummy_bytes': dummy_bytes,
-                        'final_state': h1
-                        }
-                    return collision
-        print 'Failed to find a collision'
+        collision = single_block_collision(self.hash_factory, initial_state,
+                dummy_hash.state(),
+                blocksize)
+        collision['dummy_bytes'] = dummy_bytes
+        collision['initial_state'] = initial_state
+        print 'Found collision from initial state = "%s"' % initial_state.encode('hex'), collision['s1'].encode('hex'), collision['s2'].encode('hex'), '->', collision['final_state'].encode('hex')
+
+        return collision
     
     def create_message(self, length):
         '''
