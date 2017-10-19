@@ -26,6 +26,15 @@ class Nostradamus(Serializable):
         self.entry_points = {}
 
     def add_layer(self):
+        '''
+        Adds a single layer to self.layers. Intended to be called repeatedly in
+        order to generate the full collision pyramid. Each cell in each layer is
+        a dictionary containing the final hash state of that cell, as well as the 
+        inbound edges that produce the collision.
+        The final result after calling the function k times is a list of lists of
+        collisions, where the 0th list contains 2^k starting hash states, and the 
+        k-1th list contains just one, the root of the collision tree.
+        '''
         if len(self.layers) == 0:
             self.layers = [[{'final_state': st} for st in islice(generate_strings(self.blocksize), int(2**self.k))]]
         else:
