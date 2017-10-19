@@ -3,6 +3,20 @@ from itertools import combinations
 
 class IteratedHash(object):
 
+    '''
+    This hash function is probably not quite correct. Calling
+    h.update(a)
+    h.update(b)
+    h.digest()
+
+    will only produce the same result if a and b are exact multiples of the 
+    blocksize. Otherwise the padding of the compression function will make the 
+    result different. I could solve this by adding sub-block state, and lazily
+    computing the digest, But it complicates the internal state model a bit.
+    I could also make the API more explicit by removing .update() and requiring
+    callers to digest a whole message at a time.
+    '''
+
     def __init__(self, c, h, bs=2):
         '''
         h is just 2 bytes of state. 
@@ -11,8 +25,12 @@ class IteratedHash(object):
         self.h = h
         self.c = c
         self.bs = bs
+        self.buf = []
 
     def update(self, m):
+        '''
+        As above, this should be called with whole multiples of the blocksize.
+        '''
         for i in xrange(0, len(m), self.bs):
             self.h = self.c(m[i:i+self.bs], self.h)
         return self

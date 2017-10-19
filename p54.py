@@ -18,14 +18,10 @@ class Nostradamus(Serializable):
     '''
     
     def __init__(self, hash_factory, k, blocksize):
-        # This is not strictly necessary, I'm just being lazy
-        if math.log(pow(2, k), 2) != k:
-            raise Exception('k must be a power of 2')
-
         self.hash_factory = hash_factory
         self.k = k
         self.blocksize = blocksize
-        assert k <= hash_factory().bs * 8
+
         self.layers = []
         self.entry_points = {}
 
@@ -40,7 +36,7 @@ class Nostradamus(Serializable):
                 h1 = current_layer[i]['final_state']
                 h2 = current_layer[i+1]['final_state']
                 collision = single_block_collision(self.hash_factory, h1, h2, self.blocksize)
-                #print 'Found collision', collision
+                print 'Found collision', collision
                 newlayer.append(collision)
             self.layers.append(newlayer)
 
@@ -58,23 +54,24 @@ class Nostradamus(Serializable):
         '''
         Returns a string that hashes to the root of the collision pyramid, starting
         from the hash state at self.layers[entry_point_index]
+        
+        We can think of the collisions as a pyramid of k layers, with the bottom layer 
+        having 2^(k-1) hash states, and the top layer having 1 hash state. It doesn't
+        have to be a power of 2, but that simplifies the code.
 
-        Invariant:
-        Where level 0 is the top of the pyramid, and level k-1 the bottom, and
-        level k-1 has a length that is a power of 2:
-        At level l > k-1, each index i has an edge to the collision at index 
-        i // 2 in level l-1.
+        For each layer but the bottom one, each state in the layer has an inbound edge
+        from two adjacent states in the layer below. Each edge corresponds to the 
+        single block which causes the two lower states to collide into the upper one.
         '''
-        print 'build_collision_path, entry_point_index=%d, bottom layer length=%d' % (entry_point_index, len(self.layers[0]))
         suffix = ''
         prev_layer_index = entry_point_index
-        print len(self.layers)
         for layer in self.layers[1:]:
             cur_layer_index = prev_layer_index // 2
+            cell = layer[cur_layer_index]
             if prev_layer_index % 2 == 0:
-                suffix += layer[cur_layer_index]['s1']
+                suffix += cell['s1']
             else:
-                suffix += layer[cur_layer_index]['s2']
+                suffix += cell['s2']
             prev_layer_index = cur_layer_index
             
         digest = self.hash_factory()
@@ -111,7 +108,6 @@ class Nostradamus(Serializable):
         while (len(msg) + len(glue_bytes)) % self.blocksize != 0:
             glue_bytes += '\x00'
 
-        print '! msgglue length', len(msg) + len(glue_bytes)
         prehash = self.hash_factory().update(msg + glue_bytes)
 
         # At this point, we have blocksize bytes remaining to play with in order
@@ -120,22 +116,18 @@ class Nostradamus(Serializable):
         for st in generate_strings(self.blocksize):
             h1 = prehash.clone().update(st).digest()
             if h1 in self.entry_points:
-                entry_point_block = st
+                bridge_block = st
                 entry_point_index = self.entry_points[h1]
                 break
-        if entry_point_block is None:
+        if bridge_block is None:
             raise Exception('No bridge into the collision pyramid found')
 
-        print '?', len(msg) + len(glue_bytes) + len(entry_point_block)
-
-        print '!', len(glue_bytes)
-        prefix = msg + glue_bytes + entry_point_block
-
+        prefix = msg + glue_bytes + bridge_block
         suffix = self.build_collision_path(entry_point_index)
+
         assert self.hash_factory().update(prefix).digest() == self.layers[0][entry_point_index]['final_state']
         assert self.hash_factory(h=self.layers[0][entry_point_index]['final_state']).update(suffix).digest() == self.layers[-1][0]['final_state']
-        print 'prefixlen', len(prefix)
-        print 'suffixlen', len(suffix)
+
         payload = prefix + suffix
         
         return payload
@@ -153,7 +145,7 @@ if __name__ == '__main__':
     A's %d, Angels %d
     '''
 
-    k = 3
+    k = 6
     bs = 2
     hash_factory = AESHash
     filename = 'nostradamus-%d-%d.pickle' % (k, bs)
