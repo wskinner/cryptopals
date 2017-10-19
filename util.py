@@ -4,6 +4,7 @@ from Crypto import Random
 import random
 import struct
 import bitarray
+import pickle
 
 def padding_length(st):
     try:
@@ -88,7 +89,7 @@ def str_to_num(st):
 
 def num_to_str(num, n_bits):
     if num == 0: 
-        return ''
+        return (n_bits / 8) * '\x00'
     n_bits = max(n_bits, 8)
     mask = 0xff << n_bits - 8
     chars = []
@@ -371,11 +372,20 @@ def generate_strings(byte_length, offset=0):
     '''
     Lazily enumerate all the strings of exactly byte_length bytes
     '''
-    start = 2**((byte_length - 1) * 8) + offset
     end = 2**(byte_length * 8)
-    assert start < end
-    for num in xrange(start, end):
+    assert offset < end
+    for num in xrange(offset, end):
         yield num_to_str(num, byte_length * 8)
+
+class Serializable(object):
+    def serialize(self, filename):
+        with open(filename, 'wb') as f:
+            pickle.dump(self, f)
+    
+    @staticmethod
+    def deserialize(filename):
+        with open(filename, 'rb') as f:
+            return pickle.load(f)
 
 def single_block_collision(hash_factory, initial_state1, initial_state2, blocksize):
     for i, s1 in enumerate(generate_strings(blocksize)):

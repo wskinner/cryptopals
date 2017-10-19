@@ -1,10 +1,10 @@
 from p52 import AESHash
-from util import single_block_collision
+from util import single_block_collision, Serializable
 from sys import argv
 import math
 import pickle
 
-class ExpandableMessage(object):
+class ExpandableMessage(Serializable):
 
     def __init__(self, hash_factory, k):
         self.hash_factory = hash_factory
@@ -66,15 +66,6 @@ class ExpandableMessage(object):
         # 2 bytes is 1 block
         assert len(self.collisions[-1]['dummy_bytes']) == 2
         return self
-
-    def serialize(self, filename):
-        with open(filename, 'wb') as f:
-            pickle.dump(self, f)
-    
-    @staticmethod
-    def deserialize(filename):
-        with open(filename, 'rb') as f:
-            return pickle.load(f)
 
     @staticmethod
     def second_preimage(hash_factory, msg):
